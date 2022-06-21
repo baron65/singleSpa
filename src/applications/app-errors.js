@@ -122,12 +122,15 @@ export function transformErr(ogErr, appOrParcel, newStatus) {
       // 将ogErr 包装为一个Error对象
       result = Error(errPrefix + JSON.stringify(ogErr));
     } catch (err) {
+      // 如果它不是一个错误并且你不能对其进行字符串化，那么你还能对它做些什么呢？
       // If it's not an Error and you can't stringify it, then what else can you even do to it?
       result = ogErr;
     }
   }
 
   result.appOrParcelName = toName(appOrParcel);
+
+  // 我们在转换错误后设置状态，以便错误消息引用 应用程序在状态更改之前所处的状态。 
 
   // We set the status after transforming the error so that the error message
   // references the state the application was in before the status change.

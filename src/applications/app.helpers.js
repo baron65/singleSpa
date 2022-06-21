@@ -18,6 +18,7 @@ export function isActive(app) {
   return app.status === MOUNTED;
 }
 
+// 判断该子应用是否应该被激活
 export function shouldBeActive(app) {
   try {
     return app.activeWhen(window.location);
@@ -27,14 +28,17 @@ export function shouldBeActive(app) {
   }
 }
 
+// 获取app的名字
 export function toName(app) {
   return app.name;
 }
 
+// 判断是否是一个包装
 export function isParcel(appOrParcel) {
   return Boolean(appOrParcel.unmountThisParcel);
 }
 
+// Parcel 包裹
 export function objectType(appOrParcel) {
   return isParcel(appOrParcel) ? "parcel" : "application";
 }

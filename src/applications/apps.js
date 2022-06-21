@@ -26,6 +26,10 @@ import { assign } from "../utils/assign";
 // 所有接入微前端的app
 const apps = [];
 
+/**
+ * 获取下一步要变动【需要 加载 | 挂载 | 解除挂载 | 卸载】 的应用
+ * @returns 
+ */
 export function getAppChanges() {
   const appsToUnload = [], //要卸载的子应用
     appsToUnmount = [], //要解除挂载的子应用
@@ -73,30 +77,56 @@ export function getAppChanges() {
   return { appsToUnload, appsToUnmount, appsToLoad, appsToMount };
 }
 
+/**
+ * 获取已挂载的应用名
+ * @returns 
+ */
 export function getMountedApps() {
   return apps.filter(isActive).map(toName);
 }
 
+/**
+ * 获取所有应用名
+ * @returns 
+ */
 export function getAppNames() {
   return apps.map(toName);
 }
 
-// used in devtools, not (currently) exposed as a single-spa API
+/**
+ * 获取原始应用数据。
+ * 仅在 devtools 中使用，不作为single-spa API 公开
+ * @returns 
+ */
 export function getRawAppData() {
   return [...apps];
 }
 
+/**
+ * 获取指定应用的状态
+ * @param {string} appName 
+ * @returns 
+ */
 export function getAppStatus(appName) {
   const app = find(apps, (app) => toName(app) === appName);
   return app ? app.status : null;
 }
 
 /**
- * 应用注册
- * @param {*} appNameOrConfig 应用名字或者配置
- * @param {*} appOrLoadApp 加载函数或者promise类型的app【加载好的app】
- * @param {*} activeWhen 必须是个纯函数, 该函数由window.location作为第一个参数被调用, 当应用应该被激活时它应该返回一个真值。
- * @param {*} customProps 子应用生命周期钩子函数 执行时传入的参数
+ * 应用注册api
+ *    1.清洗整理入参
+ *    2.apps是否已包含要注册的应用，有，则抛错
+ *    3.给要注册的应用增加内部属性 
+ *      loadErrorTime  加载错误时记录事件
+ *      status         应用的状态
+ *      parcels        包裹
+ *      devtools:{overlays:{options:{},selectors:[]}}
+ *    4.将其push到apps中
+ *    5.执行重新路由
+ * @param {string|object} appNameOrConfig 应用名字或者配置
+ * @param {func|app} appOrLoadApp 加载函数或者promise类型的app【加载好的app】
+ * @param {func} activeWhen 必须是个纯函数, 该函数由window.location作为第一个参数被调用, 当应用应该被激活时它应该返回一个真值。
+ * @param {object} customProps 子应用生命周期钩子函数 执行时传入的参数
  */
 export function registerApplication(
   appNameOrConfig,
@@ -144,10 +174,23 @@ export function registerApplication(
   }
 }
 
+/**
+ * 检查当前location下能激活的app
+ * @param {*} location 
+ * @returns 返回激活状态的app名字数组
+ */
 export function checkActivityFunctions(location = window.location) {
   return apps.filter((app) => app.activeWhen(location)).map(toName);
 }
 
+/**
+ * 注销应用
+ *    1.apps中是否有要注销的应用，如果没有抛错
+ *    2.完成应用卸载过程 unloadApplication(appName)
+ *    3.从apps中删除对应的数据
+ * @param {*} appName 
+ * @returns 
+ */
 export function unregisterApplication(appName) {
   if (apps.filter((app) => toName(app) === appName).length === 0) {
     throw Error(
@@ -166,6 +209,13 @@ export function unregisterApplication(appName) {
   });
 }
 
+/**
+ * 卸载应用程序
+ *   waitForUnmount
+ * @param {*} appName 
+ * @param {*} opts waitForUnmount 是否等待其他已有卸载完成
+ * @returns 
+ */
 export function unloadApplication(appName, opts = { waitForUnmount: false }) {
   if (typeof appName !== "string") {
     throw Error(
@@ -190,29 +240,28 @@ export function unloadApplication(appName, opts = { waitForUnmount: false }) {
   const appUnloadInfo = getAppUnloadInfo(toName(app));
   if (opts && opts.waitForUnmount) {
     // We need to wait for unmount before unloading the app
+    // 在卸载应用程序之前，我们需要等待卸载
 
     if (appUnloadInfo) {
-      // Someone else is already waiting for this, too
+      // 其他人也已经在等待这个，则直接返回它的promise对象
       return appUnloadInfo.promise;
     } else {
-      // We're the first ones wanting the app to be resolved.
+      // 我们是第一个希望解决该应用程序的人。
       const promise = new Promise((resolve, reject) => {
         addAppToUnload(app, () => promise, resolve, reject);
       });
       return promise;
     }
-  } else {
-    /* We should unmount the app, unload it, and remount it immediately.
-     */
+  } else {// 不等待
 
+    // 我们应该解除挂载该应用，卸载它，然后立即重新挂载它。
     let resultPromise;
 
-    if (appUnloadInfo) {
-      // Someone else is already waiting for this app to unload
+    if (appUnloadInfo) { // 其他人也已经在等待这个
       resultPromise = appUnloadInfo.promise;
       immediatelyUnloadApp(app, appUnloadInfo.resolve, appUnloadInfo.reject);
     } else {
-      // We're the first ones wanting the app to be resolved.
+      // 我们是第一个希望解决该应用程序的人。
       resultPromise = new Promise((resolve, reject) => {
         addAppToUnload(app, () => resultPromise, resolve, reject);
         immediatelyUnloadApp(app, resolve, reject);
@@ -223,6 +272,16 @@ export function unloadApplication(appName, opts = { waitForUnmount: false }) {
   }
 }
 
+/**
+ * 立即卸载应用程序
+ *    1.解除app的挂载
+ *    2.卸载app
+ *    3.执行resolve，
+ *    4.卸载promise完成后，重新路由
+ * @param {*} app 
+ * @param {*} resolve 
+ * @param {*} reject 
+ */
 function immediatelyUnloadApp(app, resolve, reject) {
   toUnmountPromise(app)
     .then(toUnloadPromise)
@@ -236,6 +295,10 @@ function immediatelyUnloadApp(app, resolve, reject) {
     .catch(reject);
 }
 
+/**
+ * 校验注册应用时的参数
+ * @param {*} config 
+ */
 function validateRegisterWithArguments(
   name,
   appOrLoadApp,
@@ -279,6 +342,10 @@ function validateRegisterWithArguments(
     );
 }
 
+/**
+ * 校验注册应用时的对象参数
+ * @param {*} config 
+ */
 export function validateRegisterWithConfig(config) {
   if (Array.isArray(config) || config === null)
     throw Error(
@@ -288,6 +355,7 @@ export function validateRegisterWithConfig(config) {
       )
     );
   const validKeys = ["name", "app", "activeWhen", "customProps"];
+  // 找到非validKeys中的key
   const invalidKeys = Object.keys(config).reduce(
     (invalidKeys, prop) =>
       validKeys.indexOf(prop) >= 0 ? invalidKeys : invalidKeys.concat(prop),
@@ -346,6 +414,14 @@ export function validateRegisterWithConfig(config) {
     );
 }
 
+/**
+ * 校验主应用传入子应用的参数
+ *    1.必须传
+ *    2.可以是函数
+ *    3.也可以是非数组且非null的对象
+ * @param {*} customProps 
+ * @returns 
+ */
 function validCustomProps(customProps) {
   return (
     !customProps ||
@@ -358,6 +434,11 @@ function validCustomProps(customProps) {
 
 /**
  * 处理（消毒）参数
+ *    1.参数错误时，抛错
+ *    2.确保：应用名类型为 string 且不为 ''
+ *            应用加载器 必传 类型要么是object，要么是function
+ *            应用激活器必须为string 或 function 且最终整合为function 
+ *            主应用传入子应用的数据类型为 非null对象 或 数组
  * @param {*} appNameOrConfig 
  * @param {*} appOrLoadApp 
  * @param {*} activeWhen 
@@ -380,8 +461,8 @@ function sanitizeArguments(
   };
 
   if (usingObjectAPI) {
-    validateRegisterWithConfig(appNameOrConfig);
     registration.name = appNameOrConfig.name;
+    validateRegisterWithConfig(appNameOrConfig);
     registration.loadApp = appNameOrConfig.app;
     registration.activeWhen = appNameOrConfig.activeWhen;
     registration.customProps = appNameOrConfig.customProps;
@@ -405,6 +486,12 @@ function sanitizeArguments(
   return registration;
 }
 
+/**
+ * 处理（消毒）loadApp:
+ *    需要保证loadApp 是一个函数，如果不是，则将其包裹为一个函数，且该函数返回pormise
+ * @param {*} loadApp 
+ * @returns 
+ */
 function sanitizeLoadApp(loadApp) {
   if (typeof loadApp !== "function") {
     return () => Promise.resolve(loadApp);
@@ -413,10 +500,19 @@ function sanitizeLoadApp(loadApp) {
   return loadApp;
 }
 
+// 确保 主应用传递给微应用的数据 不为空
 function sanitizeCustomProps(customProps) {
   return customProps ? customProps : {};
 }
 
+/**
+ * 处理（消毒）activeWhen:
+ *    1. 整合为数组。传入的activeWhen可以是单个字符串/函数，也可以是两者的数组。需要判断整合
+ *    2. 确保上述整合数组中的元素都是函数。如果不是函数，转为接受location参数的函数。
+ *    3. 返回整体函数，返回上述整合数组执行中为true。
+ * @param {*} activeWhen 
+ * @returns 
+ */
 function sanitizeActiveWhen(activeWhen) {
   // 整合为数组
   let activeWhenArray = Array.isArray(activeWhen) ? activeWhen : [activeWhen];
@@ -432,6 +528,12 @@ function sanitizeActiveWhen(activeWhen) {
     activeWhenArray.some((activeWhen) => activeWhen(location));
 }
 
+/**
+ * 将字符串路径转为activeWhen函数
+ * @param {string} path 用户传入的activeWhen字符串
+ * @param {boolean} exactMatch 完全符合。严格匹配？
+ * @returns activeWhen函数
+ */
 export function pathToActiveWhen(path, exactMatch) {
   const regex = toDynamicPathValidatorRegex(path, exactMatch);
 
@@ -449,11 +551,18 @@ export function pathToActiveWhen(path, exactMatch) {
   };
 }
 
+/**
+ * 动态路径校验的正则表达式。例如： /users/:userId/profile'  
+ * @param {string} path 用户传入的activeWhen字符串
+ * @param {boolean} exactMatch 完全符合。严格匹配？
+ * @returns 正则表达式regex
+ */
 function toDynamicPathValidatorRegex(path, exactMatch) {
   let lastIndex = 0,
-    inDynamic = false,
+    inDynamic = false, //动态flag
     regexStr = "^";
 
+  // 确保path用/开头
   if (path[0] !== "/") {
     path = "/" + path;
   }
@@ -463,6 +572,7 @@ function toDynamicPathValidatorRegex(path, exactMatch) {
     const startOfDynamic = !inDynamic && char === ":";
     const endOfDynamic = inDynamic && char === "/";
     if (startOfDynamic || endOfDynamic) {
+      // 执行两次，动态路劲开始和动态路径结束时
       appendToRegex(charIndex);
     }
   }
@@ -471,27 +581,36 @@ function toDynamicPathValidatorRegex(path, exactMatch) {
   return new RegExp(regexStr, "i");
 
   function appendToRegex(index) {
+    // 任何字符可能尾随斜杠正则表达式 。
+    // 1.[^/]匹配非/的所有字符
+    // 2.[^/]+ 匹配1次或多次非/的所有字符
     const anyCharMaybeTrailingSlashRegex = "[^/]+/?";
     const commonStringSubPath = escapeStrRegex(path.slice(lastIndex, index));
 
     regexStr += inDynamic
       ? anyCharMaybeTrailingSlashRegex
       : commonStringSubPath;
+    console.log('regexStr', regexStr);
 
     if (index === path.length) {
       if (inDynamic) {
         if (exactMatch) {
           // Ensure exact match paths that end in a dynamic portion don't match
           // urls with characters after a slash after the dynamic portion.
+          // 翻译：确保以动态部分结尾的完全匹配路径不会与动态部分后斜线后的字符匹配 url
           regexStr += "$";
         }
       } else {
-        // For exact matches, expect no more characters. Otherwise, allow
-        // any characters.
+        // For exact matches, expect no more characters. Otherwise, allow any characters. 
+        // 对于完全匹配，不需要更多字符。否则，允许任何字符。
         const suffix = exactMatch ? "" : ".*";
 
         regexStr =
-          // use charAt instead as we could not use es6 method endsWith
+          // 1.因为我们不能使用 es6 方法 endsWith，故使用 charAt 代替
+          // 2.判断末尾是否有/:
+          // 有则表示输入的path只是一个url的子路径，不需要考虑路径的serach参数匹配
+          // 没有，则需要考虑search参数及后面的匹配
+
           regexStr.charAt(regexStr.length - 1) === "/"
             ? `${regexStr}${suffix}$`
             : `${regexStr}(/${suffix})?(#.*)?$`;
@@ -502,6 +621,7 @@ function toDynamicPathValidatorRegex(path, exactMatch) {
     lastIndex = index;
   }
 
+  // 转义具有特殊含义的字符。
   function escapeStrRegex(str) {
     // borrowed from https://github.com/sindresorhus/escape-string-regexp/blob/master/index.js
     return str.replace(/[|\\{}()[\]^$+*?.]/g, "\\$&");
