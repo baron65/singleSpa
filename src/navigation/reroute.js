@@ -42,7 +42,7 @@ export function triggerAppChange() {
 /**
  * 重新路由。 sinle-spa的核心
  * @param {*} pendingPromises 待处理的 promise
- * @param {*} eventArguments 事件参数【路由事件监听回调函数的参数】。
+ * @param {*} eventArguments 事件参数列表【路由事件监听回调函数的参数】。
  *  window.addEventListener("hashchange", function() { reroute([], arguments);});
  * @returns 
  */

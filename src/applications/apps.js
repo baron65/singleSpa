@@ -117,7 +117,7 @@ export function getAppStatus(appName) {
  *    1.清洗整理入参
  *    2.apps是否已包含要注册的应用，有，则抛错
  *    3.给要注册的应用增加内部属性 
- *      loadErrorTime  加载错误时记录事件
+ *      loadErrorTime  加载错误时记录时间
  *      status         应用的状态
  *      parcels        包裹
  *      devtools:{overlays:{options:{},selectors:[]}}
