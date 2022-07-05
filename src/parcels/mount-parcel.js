@@ -17,18 +17,27 @@ import { toUnmountPromise } from "../lifecycles/unmount.js";
 import { ensureValidAppTimeouts } from "../applications/timeouts.js";
 import { formatErrorMessage } from "../applications/app-errors.js";
 
+//包裹数
 let parcelCount = 0;
 const rootParcels = { parcels: {} };
 
 // This is a public api, exported to users of single-spa
+// 这是一个公共的api，导出给single-spa的用户
 export function mountRootParcel() {
   return mountParcel.apply(rootParcels, arguments);
 }
 
+/**
+ * 安装包裹
+ * @param {*} config 
+ * @param {*} customProps 
+ * @returns 返回包裹好的协议
+ */
 export function mountParcel(config, customProps) {
   const owningAppOrParcel = this;
 
   // Validate inputs
+  // 没有配置对象或配置加载函数 无法挂载包裹
   if (!config || (typeof config !== "object" && typeof config !== "function")) {
     throw Error(
       formatErrorMessage(
@@ -39,6 +48,7 @@ export function mountParcel(config, customProps) {
     );
   }
 
+  // 如果提供包裹名称，则必须是字符串
   if (config.name && typeof config.name !== "string") {
     throw Error(
       formatErrorMessage(
@@ -50,6 +60,7 @@ export function mountParcel(config, customProps) {
     );
   }
 
+  // 自定义参数 必须是一个对象
   if (typeof customProps !== "object") {
     throw Error(
       formatErrorMessage(
@@ -62,6 +73,7 @@ export function mountParcel(config, customProps) {
     );
   }
 
+  // 如果没有作为道具提供的 domElement，则无法安装包裹
   if (!customProps.domElement) {
     throw Error(
       formatErrorMessage(
@@ -73,14 +85,17 @@ export function mountParcel(config, customProps) {
     );
   }
 
+  // 包裹数
   const id = parcelCount++;
 
+  // 是否是通过配置加载函数的方式
   const passedConfigLoadingFunction = typeof config === "function";
+  // 整合成函数方式
   const configLoadingFunction = passedConfigLoadingFunction
     ? config
     : () => Promise.resolve(config);
 
-  // Internal representation
+  // Internal representation 
   const parcel = {
     id,
     parcels: {},

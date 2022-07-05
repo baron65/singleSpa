@@ -113,7 +113,7 @@ export function getAppStatus(appName) {
 }
 
 /**
- * 应用注册api
+ * 应用注册
  *    1.清洗整理入参
  *    2.apps是否已包含要注册的应用，有，则抛错
  *    3.给要注册的应用增加内部属性 
@@ -240,7 +240,7 @@ export function unloadApplication(appName, opts = { waitForUnmount: false }) {
   const appUnloadInfo = getAppUnloadInfo(toName(app));
   if (opts && opts.waitForUnmount) {
     // We need to wait for unmount before unloading the app
-    // 在卸载应用程序之前，我们需要等待卸载
+    // 在卸载应用程序之前，我们需要等待程序解除挂载
 
     if (appUnloadInfo) {
       // 其他人也已经在等待这个，则直接返回它的promise对象
