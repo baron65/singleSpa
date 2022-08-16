@@ -12,7 +12,13 @@ export function validLifecycleFn(fn) {
   }
 }
 
-// 摊平 函数数组
+/**
+ * 整理、检查、并摊平生命周期函数为数组
+ * 
+ * @param {*} appOrParcel 
+ * @param {*} lifecycle 
+ * @returns 
+ */
 export function flattenFnArray(appOrParcel, lifecycle) {
   // 获取到appOrParcel对应生命周期钩子的函数数组
   let fns = appOrParcel[lifecycle] || [];

@@ -10,7 +10,7 @@ import { objectType, toName } from "./app.helpers";
 let errorHandlers = [];
 
 /**
- * 执行所有异常处理逻辑行数
+ * 执行所有异常处理逻辑方法
  * @param {*} err 
  * @param {*} app 
  * @param {*} newStatus 

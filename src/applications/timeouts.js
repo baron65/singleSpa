@@ -114,7 +114,7 @@ export function setUnloadMaxTime(time, dieOnTimeout, warningMillis) {
 }
 
 /**
- * 合适的时候
+ * 合理时间
  * @param {*} appOrParcel app或者经过包裹的子应用
  * @param {*} lifecycle string 生命周期 'bootstrap' | 'mount'| 'unload'|'unmount'|'update'
  * @returns 
