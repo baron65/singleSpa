@@ -70,7 +70,7 @@ export function reroute(pendingPromises = [], eventArguments) {
     appsToMount,
   } = getAppChanges();
   let appsThatChanged, //记录变动的app
-    navigationIsCanceled = false, //导航已取消
+    navigationIsCanceled = false, //导航是否已被取消
     oldUrl = currentUrl,
     newUrl = (currentUrl = window.location.href);
 
@@ -85,7 +85,7 @@ export function reroute(pendingPromises = [], eventArguments) {
     );
     return performAppChanges();
   } else {
-    // single-spa未启动：加载的需要加载是的子应用
+    // single-spa未启动：需要加载是的子应用
     appsThatChanged = appsToLoad;
     return loadApps();
   }

@@ -34,6 +34,7 @@ export function mountRootParcel() {
  * @returns 返回包裹好的协议
  */
 export function mountParcel(config, customProps) {
+  // 拥有的应用程序或包裹
   const owningAppOrParcel = this;
 
   // Validate inputs
@@ -73,7 +74,7 @@ export function mountParcel(config, customProps) {
     );
   }
 
-  // 如果没有作为道具提供的 domElement，则无法安装包裹
+  // 没有dom元素作为prop传入，则无法挂载包裹
   if (!customProps.domElement) {
     throw Error(
       formatErrorMessage(
@@ -95,7 +96,7 @@ export function mountParcel(config, customProps) {
     ? config
     : () => Promise.resolve(config);
 
-  // Internal representation 
+  // Internal representation 内部协议
   const parcel = {
     id,
     parcels: {},
@@ -139,14 +140,16 @@ export function mountParcel(config, customProps) {
     },
   };
 
-  // We return an external representation
+  // We return an external representation 我们返回一个外部协议
   let externalRepresentation;
 
-  // Add to owning app or parcel
+  // Add to owning app or parcel 添加到拥有的应用程序或包裹
   owningAppOrParcel.parcels[id] = parcel;
 
+  // 执行加载配置
   let loadPromise = configLoadingFunction();
 
+  // 当挂载一个包裹时，配置加载函数必须返回一个用包裹配置解析的promise
   if (!loadPromise || typeof loadPromise.then !== "function") {
     throw Error(
       formatErrorMessage(
@@ -159,6 +162,7 @@ export function mountParcel(config, customProps) {
 
   loadPromise = loadPromise.then((config) => {
     if (!config) {
+      // 挂载包裹时，配置加载函数返回了一个无法通过包裹配置解析的promise
       throw Error(
         formatErrorMessage(
           8,
@@ -172,6 +176,7 @@ export function mountParcel(config, customProps) {
 
     if (
       // ES Module objects don't have the object prototype
+      // ES Module 对象没有对象原型。 所以这里用Object.prototype 的hasOwnProperty判断config对象是否有属性bootstrap
       Object.prototype.hasOwnProperty.call(config, "bootstrap") &&
       !validLifecycleFn(config.bootstrap)
     ) {
@@ -214,20 +219,24 @@ export function mountParcel(config, customProps) {
       );
     }
 
-    const bootstrap = flattenFnArray(config, "bootstrap");
-    const mount = flattenFnArray(config, "mount");
-    const unmount = flattenFnArray(config, "unmount");
+    const bootstrap = flattenFnArray(config, "bootstrap"); //返回一个接受props的函数，该函数调用同步执行数组中的函数
+    const mount = flattenFnArray(config, "mount"); //返回一个接受props的函数，该函数调用同步执行数组中的函数
+    const unmount = flattenFnArray(config, "unmount"); //返回一个接受props的函数，该函数调用同步执行数组中的函数
 
-    parcel.status = NOT_BOOTSTRAPPED;
+    // 设置该包裹的属性
+    parcel.status = NOT_BOOTSTRAPPED; // 状态为未初始化
     parcel.name = name;
     parcel.bootstrap = bootstrap;
     parcel.mount = mount;
     parcel.unmount = unmount;
-    parcel.timeouts = ensureValidAppTimeouts(config.timeouts);
+    parcel.timeouts = ensureValidAppTimeouts(config.timeouts); //设置包裹的超时。 【config中没有配置时采用全局配置】
 
+    // 如果配置了更新函数
     if (config.update) {
+      // 设置内部包裹更新函数为flattenFnArray(config, "update");
       parcel.update = flattenFnArray(config, "update");
       externalRepresentation.update = function (customProps) {
+        // 给内部协议parcel 设置  customProps
         parcel.customProps = customProps;
 
         return promiseWithoutReturnValue(toUpdatePromise(parcel));
@@ -237,6 +246,7 @@ export function mountParcel(config, customProps) {
 
   // Start bootstrapping and mounting
   // The .then() causes the work to be put on the event loop instead of happening immediately
+  // 开始初始化和挂载 .then() 导致工作放在事件循环上，而不是立即发生
   const bootstrapPromise = loadPromise.then(() =>
     toBootstrapPromise(parcel, true)
   );
@@ -255,6 +265,7 @@ export function mountParcel(config, customProps) {
     mount() {
       return promiseWithoutReturnValue(
         Promise.resolve().then(() => {
+          // 状态不是未挂载状态不能挂载包裹
           if (parcel.status !== NOT_MOUNTED) {
             throw Error(
               formatErrorMessage(
@@ -267,17 +278,20 @@ export function mountParcel(config, customProps) {
             );
           }
 
-          // Add to owning app or parcel
-          owningAppOrParcel.parcels[id] = parcel;
+          // Add to owning app or parcel 添加到拥有的应用程序或包裹。
+          // 挂载包裹就是要在 owningAppOrParcel.parcels下设置属性为id，属性值为包裹parcel并 执行挂载toMountPromise
 
+          owningAppOrParcel.parcels[id] = parcel;
           return toMountPromise(parcel);
         })
       );
     },
     unmount() {
+      // 卸载内部协议 parcel
       return promiseWithoutReturnValue(parcel.unmountThisParcel());
     },
     getStatus() {
+      // 返回内部协议的状态
       return parcel.status;
     },
     loadPromise: promiseWithoutReturnValue(loadPromise),
@@ -289,6 +303,7 @@ export function mountParcel(config, customProps) {
   return externalRepresentation;
 }
 
+// 一个没有返回值的promise
 function promiseWithoutReturnValue(promise) {
   return promise.then(() => null);
 }

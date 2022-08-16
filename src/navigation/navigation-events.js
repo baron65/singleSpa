@@ -33,9 +33,9 @@ export function navigateToUrl(obj) {
   let url;
   if (typeof obj === "string") {
     url = obj;
-  } else if (this && this.href) {
+  } else if (this && this.href) { // a标签 作为上下文
     url = this.href;
-  } else if (
+  } else if ( // a标签触发的事件
     obj &&
     obj.currentTarget &&
     obj.currentTarget.href &&
