@@ -9,28 +9,32 @@ import {
 import { handleAppError } from "../applications/app-errors.js";
 import { reasonableTime } from "../applications/timeouts.js";
 
+// 存储要卸载的app信息
 const appsToUnload = {};
 
 export function toUnloadPromise(app) {
   return Promise.resolve().then(() => {
+    // 拿到要卸载的app的信息
     const unloadInfo = appsToUnload[toName(app)];
 
+    // 没有人卸载过这个app
     if (!unloadInfo) {
       /* No one has called unloadApplication for this app,
        */
       return app;
     }
-
+    //如果app的状态是未加载
     if (app.status === NOT_LOADED) {
       /* This app is already unloaded. We just need to clean up
        * anything that still thinks we need to unload the app.
        */
-      // 此应用程序已卸载。我们只需要清理仍然认为我们需要卸载应用程序的任何内容。
 
+      // 此应用程序已卸载。我们只需要清理仍然认为我们需要卸载应用程序的任何内容。
       finishUnloadingApp(app, unloadInfo);
       return app;
     }
 
+    //如果app的状态是 卸载中
     if (app.status === UNLOADING) {
       /* Both unloadApplication and reroute want to unload this app.
        * It only needs to be done once, though.
@@ -40,22 +44,23 @@ export function toUnloadPromise(app) {
       return unloadInfo.promise.then(() => app);
     }
 
+    // 如果app的状态不是 未挂载 | 加载错误 的情况直接返回app
     if (app.status !== NOT_MOUNTED && app.status !== LOAD_ERROR) {
-      /* 只有app在解除挂载或加载错误的情况下才能卸载
-       */
       return app;
     }
 
-    // 执行卸载核心逻辑
+    // 执行卸载核心逻辑【执行子系统导出的unload方法逻辑】
     const unloadPromise =
       app.status === LOAD_ERROR
         ? Promise.resolve()
         : reasonableTime(app, "unload");
 
+    // 状态更新为卸载中
     app.status = UNLOADING;
 
     return unloadPromise
       .then(() => {
+        //成功卸载
         finishUnloadingApp(app, unloadInfo);
         return app;
       })
@@ -95,6 +100,7 @@ function errorUnloadingApp(app, unloadInfo, err) {
   delete appsToUnload[toName(app)];
 
   // Unloaded apps don't have lifecycles
+  // 卸载的应用程序没有生命周期
   delete app.bootstrap;
   delete app.mount;
   delete app.unmount;
