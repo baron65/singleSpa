@@ -7,6 +7,12 @@ import {
 import { handleAppError, transformErr } from "../applications/app-errors.js";
 import { reasonableTime } from "../applications/timeouts.js";
 
+/**
+ * 
+ * @param {*} appOrParcel app或者包裹
+ * @param {boolean} hardFail 是否手动处理错误，false时，程序会让异常处理池中的处理
+ * @returns 
+ */
 export function toUnmountPromise(appOrParcel, hardFail) {
   return Promise.resolve().then(() => {
     if (appOrParcel.status !== MOUNTED) {
@@ -14,6 +20,7 @@ export function toUnmountPromise(appOrParcel, hardFail) {
     }
     appOrParcel.status = UNMOUNTING;
 
+    //解除挂载所有子包裹
     const unmountChildrenParcels = Object.keys(
       appOrParcel.parcels
     ).map((parcelId) => appOrParcel.parcels[parcelId].unmountThisParcel());
@@ -22,9 +29,12 @@ export function toUnmountPromise(appOrParcel, hardFail) {
 
     return Promise.all(unmountChildrenParcels)
       .then(unmountAppOrParcel, (parcelError) => {
-        // There is a parcel unmount error
+        // then的第二个参数。在没有catch时，解除挂载子应用出错时，会被抛到这里来
+
+        // There is a parcel unmount error  子裹包解除挂载错误
         return unmountAppOrParcel().then(() => {
           // Unmounting the app/parcel succeeded, but unmounting its children parcels did not
+          // 包裹解除挂载成功，但未解除挂载其子包裹
           const parentError = Error(parcelError.message);
           if (hardFail) {
             throw transformErr(parentError, appOrParcel, SKIP_BECAUSE_BROKEN);
@@ -37,14 +47,17 @@ export function toUnmountPromise(appOrParcel, hardFail) {
 
     function unmountAppOrParcel() {
       // We always try to unmount the appOrParcel, even if the children parcels failed to unmount.
+      // 我们总是尝试解除挂载appOrParcel，即使子包裹未能解除挂载
       return reasonableTime(appOrParcel, "unmount")
         .then(() => {
           // The appOrParcel needs to stay in a broken status if its children parcels fail to unmount
-          if (!parcelError) {
+          // 如果其子包裹无法解除挂载，appOrParcel需要保持断开状态
+          if (!parcelError) { //表示子包裹解除挂载没有出错
             appOrParcel.status = NOT_MOUNTED;
           }
         })
         .catch((err) => {
+          // 表示app解除挂载出错了。即执行子应用的unmount函数出错
           if (hardFail) {
             throw transformErr(err, appOrParcel, SKIP_BECAUSE_BROKEN);
           } else {

@@ -17,7 +17,7 @@ export function toUnloadPromise(app) {
     // 拿到要卸载的app的信息
     const unloadInfo = appsToUnload[toName(app)];
 
-    // 没有人卸载过这个app
+    // 欲卸载集合中不存在app对应的信息。即没有调用过卸载方法 unloadApplication【卸解除挂载后在将app加入到appsToUnload】
     if (!unloadInfo) {
       /* No one has called unloadApplication for this app,
        */

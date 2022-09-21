@@ -69,7 +69,7 @@ export function reroute(pendingPromises = [], eventArguments) {
     appsToLoad,
     appsToMount,
   } = getAppChanges();
-  let appsThatChanged, //记录变动的app
+  let appsThatChanged, //所有有变动的app
     navigationIsCanceled = false, //导航是否已被取消
     oldUrl = currentUrl,
     newUrl = (currentUrl = window.location.href);

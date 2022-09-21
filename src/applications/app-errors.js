@@ -28,7 +28,7 @@ export function handleAppError(err, app, newStatus) {
 }
 
 /**
- * 添加异常处理逻辑
+ * 添加异常处理逻辑，暴露给使用者添加错误处理逻辑
  * @param {*} handler 
  */
 export function addErrorHandler(handler) {
@@ -45,7 +45,7 @@ export function addErrorHandler(handler) {
 }
 
 /**
- * 移除异常处理逻辑
+ * 移除异常处理逻辑，
  * @param {*} handler 
  */
 export function removeErrorHandler(handler) {

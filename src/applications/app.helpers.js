@@ -12,7 +12,7 @@ export const UPDATING = "UPDATING"; // 更新中
 export const UNMOUNTING = "UNMOUNTING"; // 解除挂载中
 export const UNLOADING = "UNLOADING"; // 卸载中
 export const LOAD_ERROR = "LOAD_ERROR"; // 加载错误
-export const SKIP_BECAUSE_BROKEN = "SKIP_BECAUSE_BROKEN"; //跳过 因为怀了
+export const SKIP_BECAUSE_BROKEN = "SKIP_BECAUSE_BROKEN"; //跳过 因为坏了
 
 export function isActive(app) {
   return app.status === MOUNTED;
