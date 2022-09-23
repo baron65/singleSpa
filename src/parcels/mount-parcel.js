@@ -23,6 +23,7 @@ const rootParcels = { parcels: {} };
 
 // This is a public api, exported to users of single-spa
 // 这是一个公共的api，导出给single-spa的用户
+// 手动挂载包裹：用户调用其他技术栈时手动挂载
 export function mountRootParcel() {
   return mountParcel.apply(rootParcels, arguments);
 }

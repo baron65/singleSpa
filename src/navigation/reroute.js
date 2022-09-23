@@ -85,7 +85,7 @@ export function reroute(pendingPromises = [], eventArguments) {
     );
     return performAppChanges();
   } else {
-    // single-spa未启动：需要加载是的子应用
+    // single-spa未启动：需要加载的子应用
     appsThatChanged = appsToLoad;
     return loadApps();
   }
@@ -162,10 +162,10 @@ export function reroute(pendingPromises = [], eventArguments) {
         return;
       }
 
-      // 卸载掉该卸载的apps
+      // 移除掉该移除的apps
       const unloadPromises = appsToUnload.map(toUnloadPromise);
 
-      // 解除该解除挂载的apps,并卸载掉
+      // 卸载该卸载的apps,并移除掉
       const unmountUnloadPromises = appsToUnmount
         .map(toUnmountPromise)
         .map((unmountPromise) => unmountPromise.then(toUnloadPromise));
@@ -175,7 +175,7 @@ export function reroute(pendingPromises = [], eventArguments) {
       const unmountAllPromise = Promise.all(allUnmountPromises);
 
       unmountAllPromise.then(() => {
-        // 所有该卸载的app卸载结束。
+        // 所有该移除的app移除结束。
         // 执行该挂载的app前的生命周期事件。
         window.dispatchEvent(
           new CustomEvent(
@@ -189,7 +189,7 @@ export function reroute(pendingPromises = [], eventArguments) {
        * wait to mount the app until all apps are finishing unmounting
        */
       /**
-       * 在加载或者初始化应用程序时有别的应用在解除挂载，我们会等到他们卸载完成后再继续。
+       * 在加载或者初始化应用程序时有别的应用在卸载，我们会等到他们卸载完成后再继续。
        */
 
       const loadThenMountPromises = appsToLoad.map((app) => {

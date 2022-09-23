@@ -9,15 +9,15 @@ import {
 import { handleAppError } from "../applications/app-errors.js";
 import { reasonableTime } from "../applications/timeouts.js";
 
-// 存储要卸载的app信息
+// 存储要移除的app信息
 const appsToUnload = {};
 
 export function toUnloadPromise(app) {
   return Promise.resolve().then(() => {
-    // 拿到要卸载的app的信息
+    // 拿到要移除的app的信息
     const unloadInfo = appsToUnload[toName(app)];
 
-    // 欲卸载集合中不存在app对应的信息。即没有调用过卸载方法 unloadApplication【卸解除挂载后在将app加入到appsToUnload】
+    // 欲移除集合中不存在app对应的信息。即没有调用过移除方法 unloadApplication【移除后会将app加入到appsToUnload】
     if (!unloadInfo) {
       /* No one has called unloadApplication for this app,
        */
@@ -29,17 +29,17 @@ export function toUnloadPromise(app) {
        * anything that still thinks we need to unload the app.
        */
 
-      // 此应用程序已卸载。我们只需要清理仍然认为我们需要卸载应用程序的任何内容。
+      // 此应用已移除，但我们需要清理我们认为需要清理该应用程序的任何内容。
       finishUnloadingApp(app, unloadInfo);
       return app;
     }
 
-    //如果app的状态是 卸载中
+    //如果app的状态是 移除中
     if (app.status === UNLOADING) {
       /* Both unloadApplication and reroute want to unload this app.
        * It only needs to be done once, though.
        */
-      // unloadApplication 和 reroute 都想卸载这个应用程序。不过，它只需要执行一次。
+      // unloadApplication 和 reroute 都想移除这个应用程序。不过，它只需要执行一次。
 
       return unloadInfo.promise.then(() => app);
     }
@@ -49,18 +49,18 @@ export function toUnloadPromise(app) {
       return app;
     }
 
-    // 执行卸载核心逻辑【执行子系统导出的unload方法逻辑】
+    // 执行移除核心逻辑【执行子系统导出的unload方法逻辑】
     const unloadPromise =
       app.status === LOAD_ERROR
         ? Promise.resolve()
         : reasonableTime(app, "unload");
 
-    // 状态更新为卸载中
+    // 状态更新为移除中
     app.status = UNLOADING;
 
     return unloadPromise
       .then(() => {
-        //成功卸载
+        //成功移除
         finishUnloadingApp(app, unloadInfo);
         return app;
       })
@@ -72,8 +72,8 @@ export function toUnloadPromise(app) {
 }
 
 /**
- * 卸载完成处理的东西
- *    1. 删除app的所有生命周期函数及卸载信息
+ * 完成移除需要执行的逻辑
+ *    1. 删除app的所有生命周期函数及移除信息
  *    2. 将app的状态改为 未加载
  * @param {*} app 
  * @param {*} unloadInfo 
@@ -100,7 +100,7 @@ function errorUnloadingApp(app, unloadInfo, err) {
   delete appsToUnload[toName(app)];
 
   // Unloaded apps don't have lifecycles
-  // 卸载的应用程序没有生命周期
+  // 已移除的应用程序没有生命周期
   delete app.bootstrap;
   delete app.mount;
   delete app.unmount;
@@ -111,7 +111,7 @@ function errorUnloadingApp(app, unloadInfo, err) {
 }
 
 /**
- * 添加到要卸载的应用程序s中
+ * 添加到要移除的应用程序中
  * @param {*} app 
  * @param {*} promiseGetter 外部创建的promise对象
  * @param {*} resolve 回调的resolve函数
@@ -126,7 +126,7 @@ export function addAppToUnload(app, promiseGetter, resolve, reject) {
 }
 
 /**
- * 获取要卸载app的数据
+ * 获取要移除app的数据
  * @param {*} appName 
  * @returns 
  */

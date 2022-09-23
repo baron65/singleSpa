@@ -9,8 +9,8 @@ export const NOT_MOUNTED = "NOT_MOUNTED"; // 未挂载
 export const MOUNTING = "MOUNTING"; // 挂载中
 export const MOUNTED = "MOUNTED"; // 已挂载
 export const UPDATING = "UPDATING"; // 更新中
-export const UNMOUNTING = "UNMOUNTING"; // 解除挂载中
-export const UNLOADING = "UNLOADING"; // 卸载中
+export const UNMOUNTING = "UNMOUNTING"; // 卸载中
+export const UNLOADING = "UNLOADING"; // 移除中
 export const LOAD_ERROR = "LOAD_ERROR"; // 加载错误
 export const SKIP_BECAUSE_BROKEN = "SKIP_BECAUSE_BROKEN"; //跳过 因为坏了
 

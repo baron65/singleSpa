@@ -30,8 +30,8 @@ export function isStarted() {
 }
 
 if (isInBrowser) {
-  // single-spa已经被加载5s了，且start方法没有被调用。
-  // start方法调用前，应用会被加载，但不会初始化、挂载或者卸载等
+  // single-spa已经被运行了5s了，且start方法没有被调用。
+  // start方法调用前，应用会被加载，但不会初始化、挂载或者卸载
   setTimeout(() => {
     if (!started) {
       console.warn(

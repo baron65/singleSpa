@@ -243,7 +243,7 @@ if (isInBrowser) {
     "replaceState"
   );
 
-  // single-spa 已在页面上加载过。
+  // single-spa 已启动。
   if (window.singleSpaNavigate) {
     console.warn(
       formatErrorMessage(

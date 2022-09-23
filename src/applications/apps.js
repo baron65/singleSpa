@@ -27,17 +27,17 @@ import { assign } from "../utils/assign";
 const apps = [];
 
 /**
- * 获取下一步要变动【需要 加载 | 挂载 | 解除挂载 | 卸载】 的应用
+ * 获取下一步要变动【需要 加载 | 挂载 | 卸载 | 移除】 的应用
  * @returns 
  */
 export function getAppChanges() {
-  const appsToUnload = [], //要卸载的子应用
-    appsToUnmount = [], //要解除挂载的子应用
+  const appsToUnload = [], //要移除的子应用
+    appsToUnmount = [], //要卸载的子应用
     appsToLoad = [], //要加载的子应用
     appsToMount = []; //要挂载的子应用
 
   // We re-attempt to download applications in LOAD_ERROR after a timeout of 200 milliseconds
-  // 超时200毫秒后，我们重新尝试在 LOAD_ERROR 中下载 app
+  // 超时200毫秒后，我们重新尝试在 LOAD_ERROR 中加载 app
   const currentTime = new Date().getTime();
 
   apps.forEach((app) => {
@@ -240,13 +240,13 @@ export function unloadApplication(appName, opts = { waitForUnmount: false }) {
   const appUnloadInfo = getAppUnloadInfo(toName(app));
   if (opts && opts.waitForUnmount) {
     // We need to wait for unmount before unloading the app
-    // 在卸载应用程序之前，我们需要等待程序解除挂载
+    // 在移除应用程序之前，我们需要等待程序卸载
 
     if (appUnloadInfo) {
       // 其他人也已经在等待这个，则直接返回它的promise对象
       return appUnloadInfo.promise;
     } else {
-      // 我们是第一个希望解决该应用程序的人。
+      // 我们是第一个希望移除该应用程序的人。
       const promise = new Promise((resolve, reject) => {
         addAppToUnload(app, () => promise, resolve, reject);
       });
@@ -254,14 +254,14 @@ export function unloadApplication(appName, opts = { waitForUnmount: false }) {
     }
   } else {// 不等待
 
-    // 我们应该解除挂载该应用，卸载它，然后立即重新挂载它。
+    // 我们应该卸载该应用，卸载它，然后立即重新挂载它。
     let resultPromise;
 
     if (appUnloadInfo) { // 其他人也已经在等待这个
       resultPromise = appUnloadInfo.promise;
       immediatelyUnloadApp(app, appUnloadInfo.resolve, appUnloadInfo.reject);
     } else {
-      // 我们是第一个希望解决该应用程序的人。
+      // 我们是第一个希望移除该应用程序的人。
       resultPromise = new Promise((resolve, reject) => {
         addAppToUnload(app, () => resultPromise, resolve, reject);
         immediatelyUnloadApp(app, resolve, reject);
